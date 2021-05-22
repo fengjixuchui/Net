@@ -4,7 +4,6 @@
 
 <p align="center"><a href="http://liangjingkanji.github.io/Net/">使用文档</a>
  | <a href="https://coding-pages-bucket-3558162-8706000-16642-587704-1252757332.cos-website.ap-shanghai.myqcloud.com/">备用访问</a>
- | <a href="https://coding-pages-bucket-3558162-8706000-17639-608061-1252757332.cos-website.ap-shanghai.myqcloud.com">Net2-文档</a>
 </p>
 
 <p align="center"><img src="https://i.imgur.com/X06J6fK.jpg" width="400"/></p>
@@ -14,6 +13,7 @@
 <img src="https://img.shields.io/badge/language-kotlin-orange.svg"/>
 <img src="https://img.shields.io/badge/license-Apache-blue"/>
 <a href="http://liangjingkanji.github.io/Net/updates"><img src="https://img.shields.io/badge/updates-%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97-brightgreen"/></a>
+<a href="https://liangjingkanji.github.io/Net/api/"><img src="https://img.shields.io/badge/api-%E5%87%BD%E6%95%B0%E6%96%87%E6%A1%A3-red"/></a>
 <a href="https://jq.qq.com/?_wv=1027&k=vWsXSNBJ"><img src="https://img.shields.io/badge/QQ群-752854893-blue"/></a>
 </p>
 
@@ -44,6 +44,7 @@ Net 3.x 版本为OkHttp4.x实现
 - DSL作用域编程
 - 配合ViewModel
 - 数据转换器
+- 队列/同步请求返回Result
 - 自动JSON解析
 - 自动处理下拉刷新和上拉加载
 - 自动处理分页加载
@@ -89,7 +90,7 @@ implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9'
 implementation "com.squareup.okhttp3:okhttp:4.9.1"
 
 // Net
-implementation 'com.github.liangjingkanji:Net:3.0.2'
+implementation 'com.github.liangjingkanji:Net:3.0.3'
 
 // 支持自动下拉刷新和缺省页的(可选)
 implementation 'com.github.liangjingkanji:BRV:1.3.19'

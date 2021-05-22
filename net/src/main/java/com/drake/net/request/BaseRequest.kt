@@ -23,10 +23,12 @@ import com.drake.net.exception.URLParseException
 import com.drake.net.interfaces.ProgressListener
 import com.drake.net.okhttp.toNetOkhttp
 import com.drake.net.tag.NetLabel
+import com.drake.net.utils.runMain
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.File
+import java.io.IOException
 import java.net.URL
 import kotlin.reflect.typeOf
 
@@ -115,6 +117,20 @@ abstract class BaseRequest {
     //<editor-fold desc="Tag">
 
     /**
+     * 唯一的Id
+     */
+    fun setId(id: Any?) {
+        okHttpRequest.setId(id)
+    }
+
+    /**
+     * 分组
+     */
+    fun setGroup(group: Any?) {
+        okHttpRequest.setGroup(group)
+    }
+
+    /**
      * 将一个任意对象添加到Request对象中, 一般用于在拦截器或者转换器中被获取到标签, 针对某个请求的特殊业务逻辑
      * 使用`Request.tag()`获取标签
      */
@@ -131,6 +147,14 @@ abstract class BaseRequest {
      */
     fun setTag(name: String, tag: Any?) {
         tags[name] = tag
+    }
+
+    /**
+     * 为请求附着针对Kotlin的Type信息
+     */
+    @OptIn(ExperimentalStdlibApi::class)
+    inline fun <reified T> setKType() {
+        okHttpRequest.setKType(typeOf<T>())
     }
 
     //</editor-fold>
@@ -240,19 +264,6 @@ abstract class BaseRequest {
     protected val downloadListeners = NetLabel.DownloadListeners()
 
     //</editor-fold>
-    /**
-     * 唯一的Id
-     */
-    fun setId(id: Any?) {
-        okHttpRequest.setId(id)
-    }
-
-    /**
-     * 分组
-     */
-    fun setGroup(group: Any?) {
-        okHttpRequest.setGroup(group)
-    }
 
     /**
      * 是否启用日志记录器
@@ -270,13 +281,14 @@ abstract class BaseRequest {
             .build()
     }
 
+    //<editor-fold desc="SyncRequest">
     /**
-     * 执行请求
+     * 执行同步请求
      */
     @OptIn(ExperimentalStdlibApi::class)
     inline fun <reified R> execute(): R {
         NetConfig.requestInterceptor?.interceptor(this)
-        okHttpRequest.setKType(typeOf<R>())
+        setKType<R>()
         val request = buildRequest()
         val newCall = okHttpClient.newCall(request)
         return newCall.execute().use {
@@ -284,11 +296,56 @@ abstract class BaseRequest {
         }
     }
 
+    /**
+     * 执行同步请求
+     * @return 一个包含请求成功和错误的Result
+     */
+    inline fun <reified R> toResult(): Result<R> {
+        NetConfig.requestInterceptor?.interceptor(this)
+        setKType<R>()
+        val request = buildRequest()
+        val newCall = okHttpClient.newCall(request)
+        return try {
+            val value = newCall.execute().use {
+                converter.onConvert<R>(R::class.java, it) as R
+            }
+            Result.success(value)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="EnqueueRequest">
+    /**
+     * 队列请求. 支持OkHttp的Callback函数组件
+     */
     fun enqueue(block: Callback): Call {
         NetConfig.requestInterceptor?.interceptor(this)
         val newCall = okHttpClient.newCall(buildRequest())
         newCall.enqueue(block)
         return newCall
     }
+
+    /**
+     * 队列请求. 支持Result作为请求结果
+     */
+    inline fun <reified R> onResult(crossinline block: Result<R>.() -> Unit): Call {
+        NetConfig.requestInterceptor?.interceptor(this)
+        val newCall = okHttpClient.newCall(buildRequest())
+        setKType<R>()
+        newCall.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runMain { block(Result.failure(e)) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val result = converter.onConvert<R>(R::class.java, response) as R
+                runMain { block(Result.success(result)) }
+            }
+        })
+        return newCall
+    }
+    //</editor-fold>
 }
 

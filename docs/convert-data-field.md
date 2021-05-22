@@ -1,48 +1,50 @@
 
-## 转换完整的JSON
+## 具备状态码的JSON
 
 一般的解析过程是以下
 
-1) 后端返回的JSON数据
+1. 后端返回的JSON数据
 
 ```json
 {
-    "code":200,
-    "msg":"错误信息",
+    "code":0,
+    "msg":"请求成功",
     "data": {
-        "name": "彭于晏"
+        "name": "彭于晏",
+        "age": 27,
+        "height": 180
     }
 }
 ```
 
-2) 创建数据模型
+2. 创建数据模型
 
 ```kotlin
-data class UserInfo (
+data class UserModel (
     var code:Int,
     var msg:String,
-    var data:Info,
+    var data:Data,
 ) {
-
+    data class Data(var name: String, var age: Int, var height: Int)
 }
 ```
 
-3) 发起网络请求
+3. 发起网络请求
 
 ```kotlin
 scopeNetLife {
-    val data = Get<UserInfo>("/list").await().data
+    val data = Get<UserModel>("api").await().data
 }
 ```
 
-## 仅转换Data字段
+## 摘取Data字段
 
 这样每次都要`await().data`才是你要的`data`对象. 有些人就想省略直接不写code和msg, 希望直接返回data. 那么在转换器里面就只解析data字段即可
 
 简化数据对象
 
 ```kotlin
-data class Info (var name:String)
+data class UserModel(var name: String, var age: Int, var height: Int)
 ```
 
 转换器只解析data字段
@@ -62,7 +64,7 @@ class GsonConvert : JSONConvert(code = "code", message = "msg", success = "200")
 
 ```kotlin
 scopeNetLife {
-    val data = Get<Info>("/list").await().data
+    val data = Get<Info>("api").await().data
 }
 ```
 
